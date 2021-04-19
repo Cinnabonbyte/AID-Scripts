@@ -1,0 +1,286 @@
+
+// Checkout the repo examples to get an idea of other ways you can use scripting 
+// https://github.com/latitudegames/Scripting/blob/master/examples
+
+const modifier = (text) => {
+  let modifiedText = text
+  let stop = false
+  const lowered = text.toLowerCase()
+
+  if(!state.setup){
+    state.OnOff = true
+    state.silent = false
+    state.clearAN = false
+    state.ANswitch = false
+    state.clearOutput = false
+    state.automaticresponses = true
+
+    state.fixers = [
+      "Wakako Okada",
+      "Regina Jones",
+      "Mr. Hands",
+      "Muamar Reyes",
+      "Sebastian Ibarra",
+      "Dino Dinovic"
+    ]
+
+    state.quests = [
+      "steal an illegal BD to send to the NCPD as evidence from ",
+      "download the plans of an experimental EMP weapon from a terminal in ",
+      "neutralize a high-priority target located in ",
+      "terminate an experimental artificial intelligence located in ",
+      "extract an imprisoned programmer from ",
+      "steal biometric data from a terminal in ",
+      "neutralize a cyberpsycho in ",
+      "deliver a black box to a client waiting for you in ",
+      "deliver an experimental infiltration program to a client in ",
+      "deliver a prototype cyberdeck to ",
+      "steal blueprints for an advanced propulsion system from ",
+      "deliver an experimental smartgun to ",
+      "destroy equipment used to make the drug \'glitter\' in ",
+      "make a deal to purchase a mechanical spiderbot in "
+    ]
+  
+    state.locs = [
+      "a Maelstrom hideout",
+      "an abandoned facility",
+      "a rich corpo\'s penthouse",
+      "a secret underwater facility",
+      "an Arasaka facility",
+      "the 'Ho-Oh Club' (Kabuki District)",
+      "a drug den",
+      "a strip club",
+      "the Night Club \'Clouds\'",
+      "an AV-9 Aerodyne (autonomous flying vehicle) transporting Militech personnel",
+      "in a hotel suite of Konpeki Plaza"
+    ]
+    
+    state.secretdangers = [
+      ". (aaa)",
+      ". (bbb)",
+      ". (ccc)",
+      ". (ddd)",
+      ". (eee)",
+      ". (fff)"
+    ]
+
+    state.fixer = ""
+    state.quest = ""
+    state.loc = ""
+    state.secretdanger = ""
+    
+    state.buffer = 0
+    state.frequency = 1
+    state.AN = ""
+    
+    state.noJob = "Current Job: None"
+    state.currentjob = state.noJob
+    
+    if(memory.includes("Name:")){
+      state.namePart1 = memory.substring(memory.indexOf("Name:")+6)
+      state.namePart2 = state.namePart1.substring(state.namePart1.indexOf("\n"))
+      state.name = state.namePart1.replace(state.namePart2, "")
+      console.log(state.name)
+    }
+    state.defaultgreetings = [
+      "\""+state.name+", I have a job for you. You will ",
+      "\"Hey hey! Quick gig. You need to ",
+      "\"Hello, "+state.name+". I need you to ",
+      "\""+state.name+", got a job for ya. My client wants you to ",
+      "\""+state.name+", I have a gig. You need to ",
+      "\"Yo, "+state.name+"! Need you to "
+    ]
+    
+    state.onJob = false
+    state.choice = false
+    
+    state.hints = true
+    state.msg = true
+    
+    if(state.frequency == 1){
+      state.hint = "\nHint: A fixer should call in the next turn."
+    }else if (state.frequency != 1){
+      state.hint = "\nHint: A fixer should call in the next "+state.frequency+" turns."
+    }
+      
+    updateMessage()
+    state.setup = true
+  }
+  
+  //update memory
+  if(memory.includes("[")){
+    state.memPart1 = memory.substring(0,memory.lastIndexOf("["))
+    state.memPart2 = memory.substring(memory.indexOf("]")+1)
+    state.memory = {context: state.memPart1+state.currentjob+state.memPart2}
+    /*console.log(state.memPart1)
+    console.log(state.memPart2)
+    console.log(state.memory)*/
+  }
+  
+  if(lowered.includes("/calls")){
+    state.OnOff = !state.OnOff
+    state.msg = false
+    state.message = ""
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+  }
+  
+  if(lowered.includes("/silent")){
+    state.silent = !state.silent
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+  }
+  
+  if(lowered.includes("/rate")){
+    state.frequency = text.substring(text.indexOf("/")+6)
+    if(state.frequency == 1){
+      state.hint = "\nHint: The frequency has been set to 1 turn."
+    }else if (state.frequency != 1){
+      state.hint = "\nHint: The frequency has been set to "+state.frequency+" turns."
+    }
+    updateMessage()
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+    console.log(state.percentage)
+    console.log(state.hint)
+  }
+  
+  if(lowered.includes("/msg")){
+    state.msg = !state.msg
+    updateMessage()
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+  }
+  
+  if(lowered.includes("/hints")){
+    state.hints = !state.hints
+    updateMessage()
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+  }
+  
+  
+  
+  
+  if(lowered.includes("/fixer")){
+    state.addFixer = text.substring(text.indexOf("/")+7)
+    state.fixers.push(state.addFixer)
+    stop = true
+    state.clearOutput = true
+    text = ""
+    return {text, stop}
+  }
+  
+  
+  //Accept/Decline Job
+  
+  if(state.choice == true){
+    
+    if(state.buffer > 0){
+      state.buffer--
+    }
+    if(lowered.includes("/no")){
+      
+      if(state.frequency == 1){
+        state.hint = "\nHint: A fixer should call in the next turn."
+      }else if (state.frequency != 1){
+        state.hint = "\nHint: A fixer should call in the next "+state.frequency+" turns."
+      }
+      
+      state.onJob = false
+      state.currentjob = state.noJob
+      state.choice = false
+      state.ANfunctionality = false
+      state.AN = ""
+      updateMessage()
+      state.clearOutput = true
+      if(state.automaticresponses == true){
+        modifiedText = "\n> You decline.\n"
+      }else if(state.automaticresponses == false){
+        stop = true
+        text = ""
+        return {text, stop}
+      }
+    }else if(lowered.includes("/yes")){
+      state.hint = "\nHint: You accepted the job. To complete the job type: /end"
+      state.onJob = true
+      state.currentjob = "Current Job: "+state.quest+state.loc
+      state.choice = false
+      state.AN = "Current Job: "+state.quest+state.loc//+state.secretdanger
+      updateMessage()
+      state.clearOutput = true
+      if(state.automaticresponses == true){
+        modifiedText = "\n> You accept.\n"
+      }else if(state.automaticresponses == false){
+        stop = true
+        text = ""
+        return {text, stop}
+      }
+    }
+  }else if(state.choice == false){
+    if(lowered.includes("/no") || lowered.includes("/yes")){
+    state.hint = "\nHint: There is no job to accept/decline."
+    updateMessage()
+    stop = true
+    state.clearOutput = true
+    text = ""
+    console.log(state.hint)
+    return {text, stop}
+    }  
+  }
+  
+  
+  //End Job
+  
+  if(state.onJob == true){
+    if(lowered.includes("/end")){
+      state.hint = "\nHint: You ended the job. To toggle hints, type: /hints"
+      state.currentjob = state.noJob
+      updateMessage()
+      state.onJob = false
+      stop = true
+      state.clearOutput = true
+      text = ""
+      return {text, stop}
+    }
+  }else if(state.onJob == false){
+    if(lowered.includes("/end")){
+      state.hint = "\nHint: You have no job to end."
+      updateMessage()
+      stop = true
+      state.clearOutput = true
+      text = ""
+      console.log(state.hint)
+      return {text, stop}
+    }
+  }
+
+  //update memory
+  if(memory.includes("[")){
+    state.memPart1 = memory.substring(0,memory.lastIndexOf("["))
+    state.memPart2 = memory.substring(memory.indexOf("]")+1)
+    state.memory = {context: state.memPart1+state.currentjob+state.memPart2}
+    /*console.log(state.memPart1)
+    console.log(state.memPart2)
+    console.log(state.memory)*/
+  }
+  //DEBUG
+  console.log(state.hints)
+  console.log(state.msg)
+  console.log(state.hud)
+  // You must return an object with the text property defined.
+  return { text: modifiedText }
+}
+
+// Don't modify this part
+modifier(text)

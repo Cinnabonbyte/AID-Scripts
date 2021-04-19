@@ -1,0 +1,18 @@
+// Any functions you define here will be available in your other modifier scripts.
+
+function bringJoy(string) {
+  return string.replace(/\b(sad|angry)\b/g, 'happy')
+}
+
+function updateMessage() {
+  if(state.hints == false){
+    state.hud = state.currentjob
+  }else if(state.hints == true){
+    state.hud = state.currentjob+state.hint
+  }
+  if(state.msg == false){
+    state.message = ""
+  }else if (state.msg == true){
+    state.message = state.hud
+  }
+}
